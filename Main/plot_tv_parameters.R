@@ -1,17 +1,27 @@
 #PLOTS
 #Authors: Darlin Soto y Gustavo Soto
-#Date: August 18, 2025
+#Date: August 20, 2025
+
+#Functions
+source("~/lomb_scargle_classic.R")
 
 #Fits
-fit1 = readRDS("~/Main/fit1.RDS")
-fit2 = readRDS("~/Main/fit2.RDS")
+fit1 = readRDS("~fit1.RDS")
+fit2 = readRDS("~fit2.RDS")
 
 #Data
-data= as.data.frame(read.table('V445.dat'))
+data= as.data.frame(read.table('~V445.dat'))
 indices_filtro = which(data[,1] < 350 & data[,1] > 185)
 
 t=data[indices_filtro,1]
 y=data[indices_filtro,2]
+
+sqrt(mean((y-fit1$yhat)^2))
+#0.01229696
+
+sqrt(mean(abs(y-fit2$yhat)^2))
+#0.0514613
+
 
 #Graph light curve
 pdf("Data.pdf", width=10, height=5)
@@ -21,6 +31,7 @@ plot(t,y,t='l',ylim=c(max(y),min(y)),xlab='Time [BJD-2454833]',ylab=bquote(paste
 dev.off()
 
 
+#YHAT
 pdf("fit1_fit2_yhat.pdf", width=13, height=9)
 
 layout(matrix(c(1, 2), nrow=2, ncol=1), widths=c(1,1))
@@ -34,7 +45,7 @@ plot(t, y, col=1, lwd=2, pch=".", ylim=c(maxx,minn-0.3),t='l',xlab='Time [BJD-24
      ylab=bquote(paste(K[p],'[mag]')))
 lines(t, fit1$yhat, col=2,lwd=1)
 legend("topright",
-       legend = c("Observations", "Ajuste"),
+       legend = c("Observations", "Fit"),
        pch = c(".", "."),
        col = c(1, 2),
        lwd = 2)
@@ -45,7 +56,7 @@ text(min(t)+(max(t)-min(t))/2,minn-0.2,cex=1.3,
 plot(t, y, col=1, lwd=2, pch=".", ylim=c(maxx,minn-0.3),t='l',xlab='Time [BJD-2454833]',ylab=bquote(paste(K[p],'[mag]')))
 lines(t, fit2$yhat, col=2,lwd=1)
 legend("topright",
-       legend = c("Observations", "Ajuste"),
+       legend = c("Observations", "Fit"),
        pch = c(".", "."),
        col = c(1, 2),
        lwd = 2)
@@ -55,6 +66,7 @@ text(min(t)+(max(t)-min(t))/2,minn-0.2,cex=1.3,
 dev.off()
 
 
+#RESIDUALS
 
 pdf("fit1_fit2_residuals.pdf", width=13, height=9)
 layout(matrix(c(1, 2), nrow=2, ncol=1), widths=c(1,1))
@@ -71,6 +83,44 @@ text(min(t)+(max(t)-min(t))/2,minn+0.08,cex=1.3,
      expression(paste('Residuals of fit obtained with time-invariant parameters (Guggenberger et al.',' 2012)')))
 dev.off()
 
+
+#LS PERIODOGRAM
+
+t=data[indices_filtro,1]
+Tspan <- max(t) - min(t)
+dtmin <- min(diff(sort(unique(t))))
+fmin <- 1 / (Tspan * 10)
+fmax <- 0.5 / dtmin
+
+freqs <- seq(from = fmin, to = fmax, length.out = length(t))
+
+res_fit1=y-fit1$yhat
+ls_res_fit1 <- lomb_scargle_classic(t, res_fit1, freqs)
+res_fit2=y-fit2$yhat
+ls_res_fit2 <- lomb_scargle_classic(t, res_fit2, freqs)
+
+
+pdf("fit1_fit2_lsper.pdf", width=13, height=9)
+
+layout(matrix(c(1, 2), nrow=2, ncol=1), widths=c(1,1))
+par(mar = c(4.5,4.5,1,1))
+
+
+plot(freqs,ls_res_fit1$power,t='l',ylim=c(0,1.7),xlab='Frequency',ylab='Lomb-Scargle periodogram')
+text(min(freqs)+(max(freqs)-min(freqs))/2,1.6,cex=1.3,
+     expression(paste('LS periodogram of the residual obtained with time-varying parameters (Motta et al.',' 2022)')))
+
+plot(freqs,ls_res_fit2$power,t='l',ylim=c(0,1.7),xlab='Frequency',ylab='Lomb-Scargle periodogram')
+text(min(freqs)+(max(freqs)-min(freqs))/2,1.6,cex=1.3,
+     expression(paste('LS periodogram of the residual obtained with time-invariant parameters (Guggenberger et al.',' 2012)')))
+
+dev.off()
+
+freqs[which.max(ls_res_fit2$power)]
+abline(v=3*1.95517,col=2)
+
+
+#TV PARAMETERS
 
 pdf("fit1_fit2_tvpar.pdf",width=24,height=20)
 
@@ -89,7 +139,7 @@ lines(t,fit2$trend,col=2)
 for (i in 1:9) {
   minimo=min(c(fit1$g1hat[[i]],fit2$g1hat[[i]]))
   maximo=max(c(fit1$g1hat[[i]],fit2$g1hat[[i]]))
-
+  
   plot(t,fit1$g1hat[[i]],t="l",col=1,ylim=c(maximo,minimo),ylab="",
        xlab='Time [BJD-2454833]',cex.lab = 1.5)
   lines(t,fit2$g1hat[[i]],col=2)

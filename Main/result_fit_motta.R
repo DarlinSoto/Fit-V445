@@ -1,6 +1,6 @@
 #FIT SEMI-PARAMETRIC MODEL
 #Authors: Darlin Soto y Gustavo Soto
-#Date: August 18, 2025
+#Date: August 20, 2025
 
 #Functions
 source("~ajuste_pspline.R")

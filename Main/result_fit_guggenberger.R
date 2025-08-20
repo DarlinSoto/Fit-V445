@@ -1,6 +1,6 @@
 #FIT PARAMETRIC MODEL
 #Authors: Darlin Soto y Gustavo Soto
-#Date: August 18, 2025
+#Date: August 20, 2025
 
 #Functions
 source("~/error_guggenberger.R")
@@ -34,7 +34,6 @@ final_time2-initial_time2
 #1159.249    5.033 1163.707 
 
 fit2_tvpar=tvpar_guggenberger(fit2$par,t1)
-
 
 saveRDS(fit2_tvpar,"fit2.RDS")
 
